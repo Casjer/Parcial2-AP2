@@ -12,7 +12,7 @@ namespace Parcial2.BLL
     {
         public async static Task<bool> Guardar(Ventas venta)
         {
-            if (!await Existe(venta.VentaId))
+            if (!await Existe(venta.VentaId)) 
                 return await Insertar(venta);
             else
                 return await Modificar(venta);
