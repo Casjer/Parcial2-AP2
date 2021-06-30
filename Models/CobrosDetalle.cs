@@ -10,7 +10,7 @@ namespace Parcial2.Models
     {
        
         [Key]
-        public int CobroDetalleId { get; set; }
+        public int Id { get; set; }
         public int CobroId { get; set; }
         public int VentaId { get; set; }
         public decimal Monto { get; set; }
