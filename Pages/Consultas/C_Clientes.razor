@@ -1,0 +1,111 @@
+﻿@page "/C_Clientes"
+@using Models;
+@using BLL
+
+
+
+<div class="container">
+    <div class="card-header">
+        <div class="form-row mb-3 mt-3">
+            <div class="col-sm-4">
+                <h3>Consulta Clientes</h3>
+            </div>
+            <div class="col-sm-3">
+                <select @bind="indexSelect" class="custom-select">
+                    <option value="0">Filtrar por</option>
+                    <option value="2">ClienteId</option>
+                    <option value="3">Nombre Cliente</option>
+                </select>
+            </div>
+            <div class="col-sm-3">
+                <datalist id="clientes-list">
+                    @if (Clientes != null)
+                    {
+                        @foreach (var cliente in Clientes)
+                        {
+                            <option value="@cliente.Nombres"></option>
+                        }
+                    }
+                </datalist>
+                <input class="form-control w-100" list="@(indexSelect == 3 ? "clientes-list" : "")" type="@(indexSelect == 3 ? "text" : "number")" @bind="criterioBusqueda" />
+            </div>
+            <div class="col-sm-2">
+                <button class="btn btn-warning border-light" @onclick="FiltrarClientes">
+                    <i class="oi oi-magnifying-glass" />
+                    Buscar
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        @if (Clientes == null || ClientesFiltradas == null)
+        {
+            <div>
+                <h4>Cargando...</h4>
+            </div>
+        }
+        else
+        {
+            <table class="table table-hover">
+                <thead class="thead-light">
+                    <tr>                        
+                        <th>ClienteId</th>
+                        <th>Nombres</th>
+                        
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var clientes in ClientesFiltradas)
+                    {
+                        <tr>
+                            
+                            <td>@clientes.ClienteId</td>
+                            <td>@clientes.Nombres</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+@code {
+    int indexSelect = 0;
+    string criterioBusqueda;
+
+
+
+    public List<Clientes> Clientes { get; set; }
+    public List<Clientes> ClientesFiltradas { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        Clientes = await ClientesBLL.GetClientes();
+        ClientesFiltradas = Clientes;
+
+    }
+
+    async void FiltrarClientes()
+    {
+
+        if (indexSelect == 0)
+        {//Todos
+
+            ClientesFiltradas = Clientes.Where(c => true).ToList();
+
+        }
+        
+        else if (indexSelect == 2)
+        {//ClienteId
+
+            if (int.TryParse(criterioBusqueda, out int Id))
+            {
+                ClientesFiltradas = Clientes.Where(v => v.ClienteId == Id).ToList();
+            }
+
+        }
+      
+        
+
+    }
+
+}
