@@ -17,7 +17,7 @@ namespace Parcial2.Models
         public decimal Monto { get; private set; }
 
         [ForeignKey("CobroId")]
-        public virtual List<CobrosDetalle> Detalles { get; set; }
+        public virtual List<CobrosDetalle> Detalles { get; set; }=new List<CobrosDetalle>();
 
         private void CalcularMonto()
         {
