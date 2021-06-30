@@ -1,0 +1,179 @@
+﻿@page "/C_Cobros"
+@using BLL
+@using Models
+@inject IToastService toast
+
+<div class="container mt-3">
+    <div class="card shadow-lg">
+        <div class="card-header">
+            <div class="form-row">
+                <div class="col-sm flex-shrink-1">
+                    <h3>Consulta Cobros</h3>
+                </div>
+                <div class="col-sm">
+                    <select @bind="indexSelect" class="custom-select">
+                        <option value="0">Filtrar por</option>
+                        <option value="1">CobroId</option>
+                        <option value="2">ClienteId</option>
+                        <option value="3">Nombre cliente</option>
+                    </select>
+                </div>
+                <div class="col-sm">
+                    <datalist id="clientes-list">
+                        @if (Cliente != null)
+                        {
+                            @foreach (var cliente in Cliente)
+                            {
+                                <option value="@cliente.Nombres"></option>
+                            }
+                        }
+                    </datalist>
+                    <input class="form-control w-100" list="@(indexSelect == 3 ? "clientes-list" : "")" type="@(indexSelect == 3 ? "text" : "number")" @bind="criterioDeBusqueda" />
+                </div>
+                <div class="col-sm text-center">
+                    <button class="btn btn-warning border-light" @onclick="FiltarCobros">
+                        <i class="oi oi-magnifying-glass" />
+                        Buscar
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body overflow-auto">
+            @if (Cobro == null || CobrosFiltrados == null)
+            {
+                <div>
+                    <h4>Cargando...</h4>
+                </div>
+            }
+            else
+            {
+                <table class="table table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Cobro Id</th>
+                            <th>Cliente Id</th>
+                            <th>Fecha</th>
+                            <th>Monto</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var cobro in CobrosFiltrados)
+                        {
+                            <tr>
+                                <td>@cobro.CobroId</td>
+                                <td>@cobro.ClienteId</td>
+                                <td>@cobro.Fecha.ToShortDateString()</td>
+                                <td>@string.Format("{0:c}", cobro.ObtenerMonto())</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+
+
+@code {
+
+    bool MostraDialogo = false;
+    string DialogTitle;
+
+    int indexSelect = 0; 
+    string criterioDeBusqueda;
+
+    Cobros cobroSeleccionado = new Cobros();
+
+    public List<Cobros> Cobro { get; set; } = new List<Cobros>();
+    public List<Cobros> CobrosFiltrados { get; set; }
+
+    public List<Clientes> Cliente { get; set; } = new List<Clientes>();
+
+    protected async override Task OnInitializedAsync()
+    {
+        Cobro = await CobrosBLL.GetCobros();
+        CobrosFiltrados = Cobro;
+        Cliente = await ClientesBLL.GetClientes();
+    }
+
+    async Task OcultarDialogo()
+    {
+        MostraDialogo = false;
+        Cobro = await CobrosBLL.GetCobros();
+        await QuitarFiltros();
+    }
+
+    async Task QuitarFiltros()
+    {
+        indexSelect = 0;
+        criterioDeBusqueda = "";
+        await FiltarCobros();
+    }
+
+
+    async Task Eliminar()
+    {
+        bool eliminado;
+
+        eliminado = await CobrosBLL.Eliminar(cobroSeleccionado.CobroId);
+
+        if (eliminado)
+        {
+            toast.ShowSuccess("Eliminado");
+            await OcultarDialogo();
+        }
+        else
+            toast.ShowError("Error al eliminar");
+    }
+
+    async Task FiltarCobros()
+    {
+
+        if (indexSelect == 0)
+        {
+
+            CobrosFiltrados = Cobro.Where(c => true).ToList();
+
+        }
+        else if (indexSelect == 1)
+        {
+
+            if (int.TryParse(criterioDeBusqueda, out int Id))
+            {
+
+                CobrosFiltrados = Cobro.Where(c => c.CobroId == Id).ToList();
+            }
+
+        }
+        else if (indexSelect == 2)
+        {
+
+            if (int.TryParse(criterioDeBusqueda, out int Id))
+            {
+                CobrosFiltrados = Cobro.Where(c => c.ClienteId == Id).ToList();
+            }
+
+        }
+        else if (indexSelect == 3)
+        {
+            CobrosFiltrados.Clear();
+
+            var clientes = Cliente.Where(c => c.Nombres.ToLower().Contains(criterioDeBusqueda?.ToLower())).ToList();
+            foreach (var cliente in clientes)
+            {
+                var cobros = (await CobrosBLL.GetCobros()).Where(c => c.ClienteId == cliente.ClienteId).ToList();
+                if (cobros != null)
+                {
+                    CobrosFiltrados.AddRange(cobros);
+                }
+            }
+
+        }
+        StateHasChanged();
+    }
+
+
+
+}
